@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, UploadFile
+from fastapi import APIRouter, status, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix='/predict',tags=['Predict'])
@@ -14,7 +14,9 @@ def predict_single_value():
 def predict_multiple_value(dataset:UploadFile):
   
   if(dataset.content_type != 'text/csv'):
-    return JSONResponse(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,content={
-      'status':'fail',
-      'message':'Dataset should be CSV file!'
-    })
+    raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+  
+  return JSONResponse(status_code=status.HTTP_200_OK,content={
+    'status':'success',
+    'message':'Predicted values'
+  })
