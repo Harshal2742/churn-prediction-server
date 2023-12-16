@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status,Request, UploadFile
+from fastapi import APIRouter, status, UploadFile
 from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix='/predict',tags=['Predict'])

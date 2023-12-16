@@ -1,5 +1,6 @@
 from fastapi import APIRouter, status,Request, UploadFile
 from fastapi.responses import JSONResponse
+from db import database
 
 
 router = APIRouter(prefix='/train',tags=['Train'])
