@@ -1,7 +1,6 @@
-from fastapi import APIRouter, status,Request, UploadFile
+from fastapi import APIRouter, status, Request, UploadFile, Depends
 from fastapi.responses import JSONResponse
-from db import database
-
+from controller.train import TrainModel
 
 router = APIRouter(prefix='/train',tags=['Train'])
 
@@ -14,15 +13,6 @@ def train_model():
 
 
 @router.post('/upload-dataset')
-def upload_dataset(dataset:UploadFile):
-
-  if(dataset.content_type != 'text/csv'):
-    return JSONResponse(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,content={
-      'status':'fail',
-      'message':'Dataset should be CSV file!'
-    })
-  
-  return {
-    'status':'success',
-    'message':'File uploaded successfully'
-  }
+async def upload_dataset(dataset:UploadFile, train_controller:TrainModel = Depends(TrainModel)):
+  response: JSONResponse = await train_controller.upload_csv_file(dataset)
+  return response
