@@ -5,12 +5,8 @@ from controller.train import TrainModel
 router = APIRouter(prefix='/train',tags=['Train'])
 
 @router.get('/train-model')
-def train_model():
-  return JSONResponse(status_code=status.HTTP_200_OK,content={
-    'status':'success',
-    'message':'Training the model'
-  })
-
+async def train_model(train_controller:TrainModel = Depends(TrainModel)):
+  return await train_controller.train_model()
 
 @router.post('/upload-dataset')
 async def upload_dataset(dataset:UploadFile, train_controller:TrainModel = Depends(TrainModel)):
