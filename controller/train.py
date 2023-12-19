@@ -1,17 +1,22 @@
 from pymongo.database import Database
-from fastapi import UploadFile, status, Depends
+from fastapi import UploadFile, status, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from models.train import DatasetModel
-from sklearn.preprocessing import OneHotEncoder
+from models.train import DatasetModel, PreporcessingModel
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import  ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import RFECV
 from sklearn.model_selection import StratifiedKFold
 from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestClassifier
 import pandas as pd 
 import numpy as np
 import os
 from datetime import datetime
+import pickle
 
 from di import database
 
@@ -21,15 +26,59 @@ class TrainModel():
     self.db = db
 
   async def train_model(self):
-    X_train, X_test, y_train, y_test = await self.data_preprocessing()
+
+    try:
+      X_train, X_test, y_train, y_test = await self.data_preprocessing()
+    except Exception as e:
+      print(e)
+      raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail={
+        'status':'failed',
+        'message':'Failed to train model. Try again later'
+      })
+
 
     return JSONResponse(status_code=status.HTTP_200_OK,content={
       'status':'success',
-      'message':'Trained model successfully'
+      'message':'Trained model successfully',
     })
 
-  
-  async def data_preprocessing(self):
+  async def _train_select_model(X_train,X_test,y_train,y_test):
+    classifier = LogisticRegression()
+    models = [{
+        'name':'Logistic Regression',
+        'classifier' : LogisticRegression()
+      },
+      {
+        'name':'K Neighbors Classifier',
+        'classifier' : KNeighborsClassifier()
+      },
+      {
+        'name':'',
+        'classifier' : LogisticRegression()
+      },
+      {
+        'name':'Logistic Regression',
+        'classifier' : LogisticRegression()
+      },
+      {
+        'name':'Support Vector Machine',
+        'classifier':SVC(kernel='linear',random_state=42),
+      },
+      {
+        'name':'Random Forest Classifier',
+        'classifier':RandomForestClassifier(n_estimators=20, criterion="entropy", random_state=42)
+      }
+    ]
+
+    
+    for model in models:
+      model['classifier'].predict()
+      classifier.fit(X_train,y_train)
+      y_pred = classifier.predict(X_test)
+      accurancy = accuracy_score(y_test, y_pred)
+    
+
+  async def _data_preprocessing(self):
     
     dataset_info = DatasetModel(**await self.db.get_collection('dataset').find_one({}))
     df = pd.read_csv(f'dataset/{dataset_info.file_name}')
@@ -70,13 +119,31 @@ class TrainModel():
     ct = ColumnTransformer(transformers=[('one_hot_encoder',OneHotEncoder(),one_hot_encode_idx)], remainder='passthrough')
     X = np.array(ct.fit_transform(X))
 
+    # Scaling the features
+
+    sc = StandardScaler()
+
     X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.30,random_state=50)
+    
+    X_train = sc.fit_transform(X_train,y_train)
+    X_test = sc.transform(X_test)
+
     estimator = LogisticRegression()
     rfecv = RFECV(estimator, cv=StratifiedKFold(10, random_state=50, shuffle=True), scoring="accuracy")
     rfecv.fit(X_train, y_train)
 
     X_train_rfe = rfecv.transform(X_train)
     X_test_rfe = rfecv.transform(X_test)
+
+    ct_serialized = pickle.dumps(ct)
+    sc_serialized = pickle.dumps(sc)
+    rfecv_serialized = pickle.dumps(rfecv)
+    doc = PreporcessingModel(standart_scalar=sc_serialized,column_transformer=ct_serialized,rfecv=rfecv_serialized)
+    
+    collection = self.db.get_collection('preprocessing')
+    await collection.delete_many({})
+    await collection.insert_one(doc.model_dump())
+
 
     return X_train_rfe, X_test_rfe, y_train, y_test
     

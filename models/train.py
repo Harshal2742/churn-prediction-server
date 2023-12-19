@@ -11,3 +11,13 @@ class DatasetModel(BaseModel):
   id: Optional[PyObjectId]= Field(alias='_id', default=None)
   file_name: str = Field(...)
   upload_date_time: datetime = Field(...)
+
+
+class PreporcessingModel(BaseModel):
+  """
+    Model for preprocessing objects, such as StandartScalar, ColumnTranformer, rfecv
+  """
+  id: Optional[PyObjectId]= Field(alias='_id', default=None)
+  standart_scalar: bytes = Field(...)
+  column_transformer: bytes = Field(...)
+  rfecv: bytes = Field(...)
