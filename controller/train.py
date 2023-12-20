@@ -1,7 +1,7 @@
 from pymongo.database import Database
 from fastapi import UploadFile, status, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from models.train import DatasetModel, PreporcessingModel
+from models.train import DatasetModel, PreporcessingModel, BestModel
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import  ColumnTransformer
 from sklearn.model_selection import train_test_split
@@ -28,7 +28,8 @@ class TrainModel():
   async def train_model(self):
 
     try:
-      X_train, X_test, y_train, y_test = await self.data_preprocessing()
+      X_train, X_test, y_train, y_test = await self._data_preprocessing()
+      await self._train_select_model(X_train, X_test, y_train, y_test)
     except Exception as e:
       print(e)
       raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail={
@@ -42,8 +43,8 @@ class TrainModel():
       'message':'Trained model successfully',
     })
 
-  async def _train_select_model(X_train,X_test,y_train,y_test):
-    classifier = LogisticRegression()
+  async def _train_select_model(self,X_train,X_test,y_train,y_test):
+
     models = [{
         'name':'Logistic Regression',
         'classifier' : LogisticRegression()
@@ -70,12 +71,24 @@ class TrainModel():
       }
     ]
 
-    
+    max_acc = -1;
+    best_model = None 
+    best_model_name = ''
     for model in models:
-      model['classifier'].predict()
+      classifier = model['classifier']
       classifier.fit(X_train,y_train)
       y_pred = classifier.predict(X_test)
       accurancy = accuracy_score(y_test, y_pred)
+
+      if accurancy > max_acc:
+        max_acc = accurancy
+        best_model = classifier
+        best_model_name = model['name']
+
+    collection = self.db.get_collection('bestmodel')
+    await collection.delete_many({})
+    model_obj = BestModel(model=pickle.dumps(best_model),accurancy=max_acc,model_name=best_model_name)
+    await collection.insert_one(model_obj.model_dump())
     
 
   async def _data_preprocessing(self):
@@ -142,7 +155,10 @@ class TrainModel():
     
     collection = self.db.get_collection('preprocessing')
     await collection.delete_many({})
-    await collection.insert_one(doc.model_dump())
+    model_info_dict = doc.model_dump()
+    model_info_dict.pop('id')
+    print(model_info_dict.__contains__('id'))
+    await collection.insert_one(model_info_dict)
 
 
     return X_train_rfe, X_test_rfe, y_train, y_test
