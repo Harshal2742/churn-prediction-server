@@ -1,13 +1,15 @@
 from fastapi import APIRouter, status, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
+from schemas.request.predict import PredictSingleValue
 
 router = APIRouter(prefix='/predict',tags=['Predict'])
 
 
-@router.get('/single-dataset')
-def predict_single_value():
+@router.post('/single-dataset')
+def predict_single_value(single_value:PredictSingleValue):
+  print(single_value.model_dump_json(by_alias=True))
   return {'status':'success',
-          'message':'predict for single value'}
+          'message':'Hello'}
 
 
 @router.post('/upload-file')

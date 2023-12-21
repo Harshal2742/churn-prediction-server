@@ -88,7 +88,9 @@ class TrainModel():
     collection = self.db.get_collection('bestmodel')
     await collection.delete_many({})
     model_obj = BestModel(model=pickle.dumps(best_model),accurancy=max_acc,model_name=best_model_name)
-    await collection.insert_one(model_obj.model_dump())
+    model_dict = model_obj.model_dump()
+    model_dict.pop('id')
+    await collection.insert_one()
     
 
   async def _data_preprocessing(self):
@@ -157,9 +159,7 @@ class TrainModel():
     await collection.delete_many({})
     model_info_dict = doc.model_dump()
     model_info_dict.pop('id')
-    print(model_info_dict.__contains__('id'))
     await collection.insert_one(model_info_dict)
-
 
     return X_train_rfe, X_test_rfe, y_train, y_test
     
