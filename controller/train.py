@@ -90,7 +90,7 @@ class TrainModel():
     model_obj = BestModel(model=pickle.dumps(best_model),accurancy=max_acc,model_name=best_model_name)
     model_dict = model_obj.model_dump()
     model_dict.pop('id')
-    await collection.insert_one()
+    await collection.insert_one(model_dict)
     
 
   async def _data_preprocessing(self):
@@ -160,7 +160,6 @@ class TrainModel():
     model_info_dict = doc.model_dump()
     model_info_dict.pop('id')
     await collection.insert_one(model_info_dict)
-
     return X_train_rfe, X_test_rfe, y_train, y_test
     
 
