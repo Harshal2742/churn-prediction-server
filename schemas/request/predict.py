@@ -17,7 +17,7 @@ class MultipleLine(str,Enum):
   No  = 'No'
 
 class Service(str,Enum):
-  NoPhoneService = 'No internet service'
+  NoInternetService = 'No internet service'
   Yes = 'Yes'
   No  = 'No'
 
