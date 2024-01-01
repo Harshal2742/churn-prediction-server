@@ -3,7 +3,6 @@ from controller import auth
 from schemas.request.user import CreateUser, Login
 from controller.auth import AuthContoller
 from pymongo.database import Database
-import controller.auth
 
 from schemas.response.user import CreateUserResponse, GetCurrentUserResponse
 
@@ -22,4 +21,5 @@ async def login(data:Login, auth_controller:AuthContoller = Depends(AuthContolle
 
 @router.get('/current-user',response_model=GetCurrentUserResponse)
 async def get_current_user(token:str = Depends(auth.oauth2_scheme),auth_controller:AuthContoller = Depends(AuthContoller)):
-  pass
+  response = await auth_controller.get_current_user(token)
+  return response

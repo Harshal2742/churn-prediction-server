@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import timezone, datetime, timedelta
+from bson import ObjectId
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, status, HTTPException
 from pydantic import BaseModel
@@ -11,7 +12,7 @@ from jose import jwt, JWTError
 from models.user import User
 from passlib.context import CryptContext
 from config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY
-from schemas.response.user import CreateUserResponse
+from schemas.response.user import CreateUserResponse, GetCurrentUserResponse
 
 ALGORITHM='HS256'
 
@@ -35,7 +36,7 @@ class AuthContoller():
 
   def __create_access_token(self,id:str):
     encode_to = {'user_id':id}
-    expire_time = datetime.utcnow() + timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire_time = datetime.utcnow() + timedelta(hours=float(ACCESS_TOKEN_EXPIRE_MINUTES))
     encode_to.update({'expire_time':str(expire_time)})
     encoded_jwt = jwt.encode(claims=encode_to,key=SECRET_KEY,algorithm=ALGORITHM)
     return encoded_jwt
@@ -83,25 +84,32 @@ class AuthContoller():
       if expire_time == None or user_id == None:
         raise credentials_exception
       
-      if expire_time < datetime.utcnow():
+      expire_time_obj = datetime.strptime(expire_time,'%Y-%m-%d %H:%M:%S.%f')
+      
+      print("CURRENT_UTC", datetime.utcnow())
+      if expire_time_obj < datetime.utcnow():
         raise credentials_exception
       
       collection = self.db.get_collection('users')
-      user = await collection.find_one({'_id':user_id})
-
+      user = await collection.find_one({'_id':ObjectId(user_id)})
+      print(user)
       if not user:
         raise credentials_exception
 
     except JWTError:
       raise credentials_exception
     
-    except Exception:
-      raise JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,content={
+    except HTTPException as http_exception:
+      raise http_exception;
+    
+    except Exception as e:
+      print(e)
+      raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail={
         'status':'failed',
         'message':'Something went wrong! Please try after sometime.'
       })
     
-    return user
+    return GetCurrentUserResponse(**user)
 
 
   async def create_new_user(self,data:CreateUser):

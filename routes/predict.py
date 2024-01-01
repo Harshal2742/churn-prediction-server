@@ -15,7 +15,5 @@ async def predict_single_value(single_value:PredictSingleValue,predict_controlle
 
 @router.post('/upload-file')
 async def predict_multiple_value(dataset:UploadFile,predict_controller:PredictController = Depends(PredictController)):
-  
   response = await predict_controller.predict_multiple_value(dataset)
-  
   return response
