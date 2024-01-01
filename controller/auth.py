@@ -61,11 +61,7 @@ class AuthContoller():
 
     access_token = self.__create_access_token(str(doc['_id']))
 
-    return JSONResponse(status_code=status.HTTP_201_CREATED,content={
-      'status':'success',
-      'data': CreateUserResponse(**doc).model_dump_json(),
-      'access_token':access_token,
-    },headers={"WWW-Authenticate": f"Bearer {access_token}"})
+    return CreateUserResponse(**doc,access_token=access_token)
 
 
 
@@ -130,8 +126,4 @@ class AuthContoller():
     access_token = self.__create_access_token(str(doc.inserted_id))
     inserted_doc =await collection.find_one({'_id':doc.inserted_id})
     
-    return JSONResponse(status_code=status.HTTP_201_CREATED,content={
-      'status':'success',
-      'data': CreateUserResponse(**inserted_doc).model_dump_json(),
-      'access_token':access_token,
-    },headers={"WWW-Authenticate": f"Bearer {access_token}"})
+    return JSONResponse(status_code=status.HTTP_201_CREATED,content=CreateUserResponse(**inserted_doc,access_token=access_token).model_dump_json(),headers={"WWW-Authenticate": f"Bearer {access_token}"}, )
