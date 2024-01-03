@@ -86,13 +86,11 @@ class AuthContoller():
       
       expire_time_obj = datetime.strptime(expire_time,'%Y-%m-%d %H:%M:%S.%f')
       
-      print("CURRENT_UTC", datetime.utcnow())
       if expire_time_obj < datetime.utcnow():
         raise credentials_exception
       
       collection = self.db.get_collection('users')
       user = await collection.find_one({'_id':ObjectId(user_id)})
-      print(user)
       if not user:
         raise credentials_exception
 
@@ -103,7 +101,6 @@ class AuthContoller():
       raise http_exception;
     
     except Exception as e:
-      print(e)
       raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail={
         'status':'failed',
         'message':'Something went wrong! Please try after sometime.'

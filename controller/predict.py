@@ -1,4 +1,3 @@
-
 from pymongo.database import Database
 from fastapi import Depends, HTTPException, status, UploadFile
 from fastapi.responses import JSONResponse
@@ -14,6 +13,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import RFECV
 
+from schemas.response.Predict import PredictMultipleValueResult, PredictSingleValueResult
+
 
 class PredictController():
 
@@ -28,30 +29,30 @@ class PredictController():
       result  = await self._predict(dataset)
       
     except Exception as e:
-      print(e)
       raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail={
         'status':'fail',
         'message':'Failed to predict value.'
       })
     
-    return JSONResponse(status_code=status.HTTP_200_OK,content={
-      'status':'success',
-      'data':{
-        'prediction_result':result.__str__()
-      }
-    })
-  
+    is_churn = False
+
+    if result[0] == 0 :
+      is_churn = False
+    else:
+      is_churn = True
+    
+    return PredictSingleValueResult(is_chrun=is_churn)
+
   async def predict_multiple_value(self,file:UploadFile):
 
     if(file.content_type != 'text/csv'):
-      return JSONResponse(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,content={
+      raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,detail={
         'status':'fail',
         'message':'Dataset should be CSV file!'
       })
     
     try:
       df = pd.read_csv(file.file)
-      print(df.dtypes)
 
       if(len(df.columns) != 20):
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,detail={
@@ -65,18 +66,12 @@ class PredictController():
       raise e
 
     except Exception as e:
-      print(e)
       raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail={
         'status': 'failed',
         'message':'Failed to predict!. Please try after sometime'
       })
 
-    return JSONResponse(status_code=status.HTTP_200_OK,content={
-      'status':'success',
-      'data':{
-        'prediction_result':result.__str__()
-      }
-    })
+    return PredictMultipleValueResult(result=result)
           
 
   async def _data_preprocessing(self,df:DataFrame):

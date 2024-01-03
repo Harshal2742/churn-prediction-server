@@ -19,11 +19,25 @@ from datetime import datetime
 import pickle
 
 from di import database
+from schemas.response.user import CurrentModelInformationResponse
 
 class TrainModel():
 
   def __init__(self,db:Database =Depends(database.get_db)) -> None:
     self.db = db
+
+  async def get_current_model_information(self):
+    collection = self.db.get_collection('bestmodel')
+    try:
+      doc =await collection.find_one({})
+
+    except Exception as e:
+      raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail={
+        'status':'failed',
+        'message':'Something went wrong. Please try again later.'
+      })
+    
+    return CurrentModelInformationResponse(**doc);
 
   async def train_model(self):
 
