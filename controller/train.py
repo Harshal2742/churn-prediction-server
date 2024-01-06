@@ -10,7 +10,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.ensemble import RandomForestClassifier
 import pandas as pd 
 import numpy as np
@@ -19,7 +19,7 @@ from datetime import datetime
 import pickle
 
 from di import database
-from schemas.response.user import CurrentModelInformationResponse
+from schemas.response.train import CurrentModelInformationResponse
 
 class TrainModel():
 
@@ -88,6 +88,10 @@ class TrainModel():
     max_acc = -1;
     best_model = None 
     best_model_name = ''
+    precision: float
+    recall:float
+    f_score:float
+
     for model in models:
       classifier = model['classifier']
       classifier.fit(X_train,y_train)
@@ -98,10 +102,13 @@ class TrainModel():
         max_acc = accurancy
         best_model = classifier
         best_model_name = model['name']
+        precision = precision_score(y_test,y_pred)
+        recall = recall_score(y_test,y_pred)
+        f_score = f1_score(y_test,y_pred)
 
     collection = self.db.get_collection('bestmodel')
     await collection.delete_many({})
-    model_obj = BestModel(model=pickle.dumps(best_model),accurancy=max_acc,model_name=best_model_name)
+    model_obj = BestModel(model=pickle.dumps(best_model),accurancy=max_acc,model_name=best_model_name,precision=precision,recall=recall,f_score=f_score)
     model_dict = model_obj.model_dump()
     model_dict.pop('id')
     await collection.insert_one(model_dict)
@@ -204,8 +211,6 @@ class TrainModel():
     doc_count: int = await dataset_collection.count_documents({})
     if doc_count > 0:
       await dataset_collection.delete_many({})
-
-    print('Document count : ',doc_count)
 
     await dataset_collection.insert_one({
       'file_name':file_name,

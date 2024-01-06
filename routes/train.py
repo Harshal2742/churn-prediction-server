@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Request, UploadFile, Depends
 from fastapi.responses import JSONResponse
 from controller.train import TrainModel
 from models.train import BestModel
-from schemas.response.user import CurrentModelInformationResponse
+from schemas.response.train import CurrentModelInformationResponse
 
 router = APIRouter(prefix='/train',tags=['Train'])
 

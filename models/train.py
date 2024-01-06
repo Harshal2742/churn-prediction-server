@@ -18,6 +18,9 @@ class BestModel(BaseModel):
   """
   id: Optional[PyObjectId]= Field(alias='_id', default=None)
   accurancy: float = Field(...)
+  precision: float = Field(...)
+  recall:float = Field(...)
+  f_score:float = Field(...)
   model: bytes = Field(...)
   model_name: str = Field(...)
 

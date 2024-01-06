@@ -1,8 +1,6 @@
-from fastapi import APIRouter, status, UploadFile, HTTPException, Depends
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, UploadFile, Depends
 from schemas.request.predict import PredictSingleValue
 from controller.predict import PredictController
-import pandas as pd
 
 from schemas.response.Predict import PredictMultipleValueResult, PredictSingleValueResult
 

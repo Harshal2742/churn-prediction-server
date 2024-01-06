@@ -18,7 +18,3 @@ class GetCurrentUserResponse(BaseModel):
   email:str
   role:str
 
-class CurrentModelInformationResponse(BaseModel):
-  id: Optional[PyObjectId]= Field(alias='_id', default=None)
-  accurancy: float = Field(...)
-  model_name: str = Field(...)
