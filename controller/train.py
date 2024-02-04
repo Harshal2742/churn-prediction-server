@@ -2,7 +2,6 @@ import pymongo
 from pymongo.database import Database
 from fastapi import UploadFile, status, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from sklearn.utils import resample
 from models.train import DatasetModel, PreporcessingModel, BestModel
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import  ColumnTransformer

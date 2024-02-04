@@ -1,6 +1,8 @@
+from bson.objectid import ObjectId
 from pymongo.database import Database
 from fastapi import Depends, HTTPException, status, UploadFile
 from fastapi.responses import JSONResponse
+from sklearn.metrics import consensus_score
 from di import database
 import pandas as pd
 from pandas import DataFrame
@@ -21,12 +23,12 @@ class PredictController():
   def __init__(self,db:Database =Depends(database.get_db)) -> None:
     self.db = db
 
-  async def predict_single_value(self,value:PredictSingleValue):
+  async def predict_single_value(self,value:PredictSingleValue, selected_model_id:str):
     json_data = value.model_dump(by_alias=True,mode='json')
     df = pd.json_normalize(json_data)
     try:
       dataset = await self._data_preprocessing(df)
-      result  = await self._predict(dataset)
+      result  = await self._predict(dataset, selected_model_id)
       
     except Exception as e:
       raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail={
@@ -43,7 +45,7 @@ class PredictController():
     
     return PredictSingleValueResult(is_chrun=is_churn)
 
-  async def predict_multiple_value(self,file:UploadFile):
+  async def predict_multiple_value(self,file:UploadFile,selected_model_id:str):
 
     if(file.content_type != 'text/csv'):
       raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,detail={
@@ -61,7 +63,7 @@ class PredictController():
         })
       
       dataset = await self._data_preprocessing(df)
-      result = await self._predict(dataset)
+      result = await self._predict(dataset, selected_model_id)
     except HTTPException as e:
       raise e
 
@@ -107,9 +109,10 @@ class PredictController():
     X = rfecv.transform(X)
     return X
   
-  async def _predict(self,dataset:ndarray) -> ndarray:
+  async def _predict(self,dataset:ndarray,selected_model_id:str) -> ndarray:
     collection = self.db.get_collection('bestmodel')
-    best_model = BestModel(**await collection.find_one({}))
-    classifier = pickle.loads(best_model.model)
+    doc = await collection.find_one(ObjectId(selected_model_id))
+    selectedModel = BestModel(**doc)
+    classifier = pickle.loads(selectedModel.model)
 
     return classifier.predict(dataset)
