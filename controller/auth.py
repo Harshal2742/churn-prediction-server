@@ -19,6 +19,7 @@ ALGORITHM='HS256'
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth")
 
+
 class AuthContoller():
     
   def __init__(self,db:Database =Depends(database.get_db)) -> None:

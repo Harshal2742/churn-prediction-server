@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Request, UploadFile, Depends
 from fastapi.responses import JSONResponse
 from controller.train import TrainModel
 from models.train import BestModel
-from schemas.response.train import CurrentModelInformationResponse
+from schemas.response.train import GetAllModelsInformationResponse
 
 router = APIRouter(prefix='/train',tags=['Train'])
 
@@ -16,7 +16,7 @@ async def upload_dataset(dataset:UploadFile, train_controller:TrainModel = Depen
   response: JSONResponse = await train_controller.upload_csv_file(dataset)
   return response
 
-@router.get('/current-model-information', response_model=CurrentModelInformationResponse)
-async def get_current_model_information(train_controller:TrainModel = Depends(TrainModel)):
-  response = await train_controller.get_current_model_information()
+@router.get('/get-all-models', response_model=GetAllModelsInformationResponse)
+async def get_all_models(train_controller:TrainModel = Depends(TrainModel)):
+  response: GetAllModelsInformationResponse = await train_controller.get_all_models()
   return response;

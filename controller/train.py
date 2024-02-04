@@ -1,6 +1,8 @@
+import pymongo
 from pymongo.database import Database
 from fastapi import UploadFile, status, Depends, HTTPException
 from fastapi.responses import JSONResponse
+from sklearn.utils import resample
 from models.train import DatasetModel, PreporcessingModel, BestModel
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import  ColumnTransformer
@@ -19,25 +21,35 @@ from datetime import datetime
 import pickle
 
 from di import database
-from schemas.response.train import CurrentModelInformationResponse
+from schemas.response.train import GetAllModelsInformationResponse, ModelInformation
 
 class TrainModel():
 
   def __init__(self,db:Database =Depends(database.get_db)) -> None:
     self.db = db
 
-  async def get_current_model_information(self):
+  async def get_all_models(self):
     collection = self.db.get_collection('bestmodel')
+    doc_count = await collection.count_documents({})
+    models = []
     try:
-      doc =await collection.find_one({})
+      cursor = collection.find().sort('accurancy',pymongo.DESCENDING)
+
+      docs = await cursor.to_list(doc_count)
+
+      for doc in docs:
+        model = ModelInformation(**doc)
+        models.append(model)
 
     except Exception as e:
       raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail={
         'status':'failed',
         'message':'Something went wrong. Please try again later.'
       })
-    
-    return CurrentModelInformationResponse(**doc);
+    finally:
+      await cursor.close()
+  
+    return GetAllModelsInformationResponse(models=models);
 
   async def train_model(self):
 
@@ -68,14 +80,6 @@ class TrainModel():
         'classifier' : KNeighborsClassifier()
       },
       {
-        'name':'',
-        'classifier' : LogisticRegression()
-      },
-      {
-        'name':'Logistic Regression',
-        'classifier' : LogisticRegression()
-      },
-      {
         'name':'Support Vector Machine',
         'classifier':SVC(kernel='linear',random_state=42),
       },
@@ -85,34 +89,23 @@ class TrainModel():
       }
     ]
 
-    max_acc = -1;
-    best_model = None 
-    best_model_name = ''
-    precision: float
-    recall:float
-    f_score:float
+    trained_models = [] 
 
     for model in models:
       classifier = model['classifier']
       classifier.fit(X_train,y_train)
       y_pred = classifier.predict(X_test)
       accurancy = accuracy_score(y_test, y_pred)
-
-      if accurancy > max_acc:
-        max_acc = accurancy
-        best_model = classifier
-        best_model_name = model['name']
-        precision = precision_score(y_test,y_pred)
-        recall = recall_score(y_test,y_pred)
-        f_score = f1_score(y_test,y_pred)
+      precision = precision_score(y_test,y_pred)
+      recall = recall_score(y_test,y_pred)
+      f_score = f1_score(y_test,y_pred)
+      model_obj = BestModel(model=pickle.dumps(classifier),accurancy=accurancy,model_name=model['name'],precision=precision,recall=recall,f_score=f_score)
+      trained_models.append(model_obj.model_dump())
 
     collection = self.db.get_collection('bestmodel')
     await collection.delete_many({})
-    model_obj = BestModel(model=pickle.dumps(best_model),accurancy=max_acc,model_name=best_model_name,precision=precision,recall=recall,f_score=f_score)
-    model_dict = model_obj.model_dump()
-    model_dict.pop('id')
-    await collection.insert_one(model_dict)
-    
+    await collection.insert_many(trained_models)
+
 
   async def _data_preprocessing(self):
     

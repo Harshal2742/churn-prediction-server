@@ -16,7 +16,7 @@ class BestModel(BaseModel):
   """
     Model for storing the best model.
   """
-  id: Optional[PyObjectId]= Field(alias='_id', default=None)
+  id: Optional[PyObjectId]= Field(default_factory=PyObjectId,alias='_id',serialization_alias='_id')
   accurancy: float = Field(...)
   precision: float = Field(...)
   recall:float = Field(...)
