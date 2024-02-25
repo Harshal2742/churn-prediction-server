@@ -1,12 +1,12 @@
 from motor import motor_asyncio
 from dotenv import load_dotenv
-import os
 
-load_dotenv('.env',override=False)
+from config import DB_PASSWORD, DB_URL, DB_USERNAME
 
-db_url="mongodb+srv://<username>:<password>@cluster0.yv4b393.mongodb.net/churnprediction%3FretryWrites=true&w=majority"
-password="BzKLfemi2TaJEH9B"
-username="churnprediction"
+
+db_url= DB_URL
+password= DB_PASSWORD
+username= DB_USERNAME
 
 url = db_url.replace('<password>',password).replace('<username>',username)
 

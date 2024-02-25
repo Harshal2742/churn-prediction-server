@@ -32,7 +32,7 @@ class TrainModel():
     doc_count = await collection.count_documents({})
     models = []
     try:
-      cursor = collection.find().sort('accurancy',pymongo.DESCENDING)
+      cursor = collection.find({},{"model":False}).sort('accurancy',pymongo.DESCENDING)
 
       docs = await cursor.to_list(doc_count)
 

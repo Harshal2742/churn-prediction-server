@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 app.include_router(predict.router,dependencies=[Depends(oauth2_scheme)])
-app.include_router(train.router,dependencies=[Depends(oauth2_scheme)])
+app.include_router(train.router)
 app.include_router(auth.router)
 @app.get('/')
 def main():
