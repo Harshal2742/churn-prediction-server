@@ -1,8 +1,7 @@
-from datetime import timezone, datetime, timedelta
+from datetime import datetime, timedelta
 from bson import ObjectId
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, status, HTTPException
-from pydantic import BaseModel
 from di import database
 from pymongo.database import Database
 from pymongo.results import InsertOneResult

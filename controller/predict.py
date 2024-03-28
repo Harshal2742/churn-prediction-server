@@ -1,8 +1,6 @@
 from bson.objectid import ObjectId
 from pymongo.database import Database
 from fastapi import Depends, HTTPException, status, UploadFile
-from fastapi.responses import JSONResponse
-from sklearn.metrics import consensus_score
 from di import database
 import pandas as pd
 from pandas import DataFrame

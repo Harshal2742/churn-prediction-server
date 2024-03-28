@@ -1,5 +1,4 @@
 from motor import motor_asyncio
-from dotenv import load_dotenv
 
 from config import DB_PASSWORD, DB_URL, DB_USERNAME
 
