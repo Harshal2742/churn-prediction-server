@@ -10,6 +10,7 @@ from sklearn.feature_selection import RFECV
 from sklearn.model_selection import StratifiedKFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.ensemble import RandomForestClassifier
@@ -85,6 +86,10 @@ class TrainModel():
       {
         'name':'Random Forest Classifier',
         'classifier':RandomForestClassifier(n_estimators=20, criterion="entropy", random_state=42)
+      },
+      {
+        'name':'Naive Bayes Classifiers',
+        'classifier':GaussianNB(),
       }
     ]
 
