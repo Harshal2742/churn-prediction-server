@@ -18,6 +18,50 @@ ALGORITHM='HS256'
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth")
 
+async def get_current_user(token: str = Depends(oauth2_scheme),db:Database = Depends(database.get_db)) -> GetCurrentUserResponse:
+  
+  credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail={
+          'status':'failed',
+          'message':'Invalid access token! Please login again'
+        },
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+  try:
+    payload = jwt.decode(token=token,key=SECRET_KEY,algorithms=[ALGORITHM])
+    expire_time = payload.get('expire_time')
+    user_id = payload.get('user_id')
+
+    if expire_time == None or user_id == None:
+      raise credentials_exception
+      
+    expire_time_obj = datetime.strptime(expire_time,'%Y-%m-%d %H:%M:%S.%f')
+      
+    if expire_time_obj < datetime.utcnow():
+      raise credentials_exception
+      
+    collection = db.get_collection('users')
+    user = await collection.find_one({'_id':ObjectId(user_id)})
+    if not user:
+      raise credentials_exception
+
+  except JWTError:
+    raise credentials_exception
+    
+  except HTTPException as http_exception:
+    raise http_exception;
+    
+  except Exception as e:
+    print(e)
+    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail={
+      'status':'failed',
+      'message':'Something went wrong! Please try after sometime.'
+    })
+    
+  return GetCurrentUserResponse(**user)
+
 
 class AuthContoller():
     
@@ -63,50 +107,6 @@ class AuthContoller():
     access_token = self.__create_access_token(str(doc['_id']))
 
     return CreateUserResponse(**doc,access_token=access_token)
-
-
-
-  async def get_current_user(self,token:str):
-    credentials_exception = HTTPException(
-          status_code=status.HTTP_401_UNAUTHORIZED,
-          detail={
-            'status':'failed',
-            'message':'Invalid access token! Please login again'
-          },
-          headers={"WWW-Authenticate": "Bearer"},
-      )
-
-    try:
-      payload = jwt.decode(token=token,key=SECRET_KEY,algorithms=[ALGORITHM])
-      expire_time = payload.get('expire_time')
-      user_id = payload.get('user_id')
-
-      if expire_time == None or user_id == None:
-        raise credentials_exception
-      
-      expire_time_obj = datetime.strptime(expire_time,'%Y-%m-%d %H:%M:%S.%f')
-      
-      if expire_time_obj < datetime.utcnow():
-        raise credentials_exception
-      
-      collection = self.db.get_collection('users')
-      user = await collection.find_one({'_id':ObjectId(user_id)})
-      if not user:
-        raise credentials_exception
-
-    except JWTError:
-      raise credentials_exception
-    
-    except HTTPException as http_exception:
-      raise http_exception;
-    
-    except Exception as e:
-      raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail={
-        'status':'failed',
-        'message':'Something went wrong! Please try after sometime.'
-      })
-    
-    return GetCurrentUserResponse(**user)
 
 
   async def create_new_user(self,data:CreateUser):
