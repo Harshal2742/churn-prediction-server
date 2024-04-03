@@ -1,3 +1,5 @@
+from io import  BytesIO
+from typing import BinaryIO
 import pymongo
 from pymongo.database import Database
 from fastapi import UploadFile, status, Depends, HTTPException
@@ -188,7 +190,14 @@ class TrainModel():
         'message':'Dataset should be CSV file!'
       })
     
-
+    df = pd.read_csv(dataset.file) 
+    if(len(df.columns) != 21):
+      raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,detail={
+        'status':'failed',
+        'message':'Please upload CSV which contains valid data.'
+      })
+    
+    dataset.file.seek(0)  
     dir = 'dataset'
     os.makedirs(dir,exist_ok=True)
     
@@ -198,10 +207,8 @@ class TrainModel():
 
 
     file_name = dataset.filename
-
-    file_content = dataset.file.read()
-    with open(f'{dir}/{file_name}',mode='wb') as file:
-      file.write(file_content)
+    with open(f'{dir}/{file_name}', "wb") as buffer:
+        buffer.write(dataset.file.read())
 
     dataset_collection = self.db.get_collection('dataset')
 
