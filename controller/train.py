@@ -83,7 +83,7 @@ class TrainModel():
       },
       {
         'name':'Support Vector Machine',
-        'classifier':SVC(kernel='linear',random_state=42),
+        'classifier':SVC(kernel='rbf',random_state=42),
       },
       {
         'name':'Random Forest Classifier',
